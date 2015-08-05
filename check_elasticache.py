@@ -21,13 +21,13 @@ import datetime
 import json
 
 
-def get_cluster_info(region, indentifier=None):
+def get_cluster_info(region, identifier=None):
     """Function for fetching ElastiCache details"""
     elasticache = boto.elasticache.connect_to_region(region)
     try:
-        if indentifier:
+        if identifier:
             info = elasticache.describe_cache_clusters(
-                indentifier,
+                identifier,
                 show_cache_node_info=True)[
                 'DescribeCacheClustersResponse'][
                 'DescribeCacheClustersResult'][
@@ -43,7 +43,8 @@ def get_cluster_info(region, indentifier=None):
     return info
 
 
-def get_cluster_stats(region, node, step, start_time, end_time, metric, identifier):
+def get_cluster_stats(region, node, step, start_time, end_time, metric,
+                      identifier):
     """Function for fetching ElastiCache statistics from CloudWatch"""
     cw = boto.ec2.cloudwatch.connect_to_region(region)
     result = cw.get_metric_statistics(step,
@@ -251,7 +252,8 @@ def main():
         else:
             status = OK
             note = '%s %s. Status: %s' % (info['Engine'],
-                   info['EngineVersion'], info['CacheClusterStatus'])
+                                          info['EngineVersion'],
+                                          info['CacheClusterStatus'])
 
     # ElastiCache Load Average
     elif options.metric == 'cpu':
@@ -339,7 +341,7 @@ def main():
             parser.error('Unit is not valid.')
 
         info = get_cluster_info(options.region, options.ident)
-        used_memory = get_cluster_stats(options.node, 60, tm -
+        used_memory = get_cluster_stats(options.region, options.node, 60, tm -
                                         datetime.timedelta(seconds=60), tm,
                                         metrics[options.metric], options.ident)
         if not info or not used_memory:
@@ -354,8 +356,8 @@ def main():
                       info.instance_class
                 sys.exit(UNKNOWN)
 
-            #free = '%.2f' % (free / 1024 ** 3)
-            #free_pct = '%.2f' % (float(free) / storage * 100)
+            # free = '%.2f' % (free / 1024 ** 3)
+            # free_pct = '%.2f' % (float(free) / storage * 100)
             used_percent = used_memory / max_memory * 100
             if options.unit == 'percent':
                 val = used_percent
@@ -372,10 +374,10 @@ def main():
 
             if status is None:
                 status = OK
-            note = 'Used %s: %.2f GB (%.0f%%) of %.2f GB' % (options.metric,
-                   used_memory/1024/1024/1024,
-                   float(used_percent),
-                   max_memory/1024/1024/1024)
+            note = 'Used %s: %.2f GB (%.0f%%) of %.2f GB' % \
+                   (options.metric, used_memory/1024/1024/1024,
+                    float(used_percent),
+                    max_memory/1024/1024/1024)
             perf_data = 'used_%s=%s;%s;%s;0;%s' % (options.metric,
                                                    val,
                                                    warn,
@@ -394,7 +396,7 @@ def main():
                          'greater than warning.')
 
         info = get_cluster_info(options.region, options.ident)
-        swap = get_cluster_stats(options.node, 60, tm -
+        swap = get_cluster_stats(options.region, options.node, 60, tm -
                                  datetime.timedelta(seconds=60), tm,
                                  metrics[options.metric], options.ident)
         if not info or not isinstance(swap, float):
